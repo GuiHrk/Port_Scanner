@@ -1,26 +1,29 @@
 import socket 
+from concurrent.futures import ThreadPoolExecutor
 
-def scan_ports(host, porta, timeout=1):
+socket.setdefaulttimeout(1)
+
+
+def scan_port(host, porta):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(timeout)
-    try:
-        sock.connect((host,porta))
-        return True 
-    except (socket.timeout, ConnectionRefusedError):
-        return False
-    finally:
-        sock.close()
+    result = sock.connect_ex((host, porta))
 
-def scan_range (host, inicio, fim):
-    print(f"\n Escanenado {host} de {inicio} a {fim} \n")
-    portas_abertas = []
+    if result == 0:
+        print(f"[+] Porta {porta} aberta")
+    sock.close()
 
-    for porta in range(inicio, fim +1):
-        if scan_ports(host, porta):
-            print(f"[+] Porta {porta} aberta")
-            portas_abertas.append(porta)
 
-    print("PORTAS ABERTAS:", portas_abertas)
+def main():
+   host = "scanme.nmap.org"
+   start_port = 1
+   end_port = 1024
+
+   print(f"Escanenando{host} de portas {start_port} a {end_port}")
+
+   with ThreadPoolExecutor(max_workers=100) as executor:
+      for port in range(start_port, end_port +1):
+          executor.submit(scan_port, host, port)
+
 
 if __name__ == "__main__":
-    scan_range("scanme.nmap.org",1,1024)
+   main()

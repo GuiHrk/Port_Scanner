@@ -36,6 +36,28 @@ def grab_banner(host,porta):
     except:
          return None
 
+def http_enum(host, porta):
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        sock.connect((host,porta))
+
+        request = f"GET / HTTP/1.1\r\nHOST: {host}\r\n\r\n"
+        sock.send(request.encode())
+
+        response = sock.recv(1024).decode(errors="ignore")
+
+        for line in response.split("\r\n"):
+            if line.lower().startswith("server:"):
+               return line
+        
+        return "SERVER HEADER NÃO ENCONTRADO"
+    except Exception as e:
+            return f"HTTP ENUM ERROR: ({e})"
+
+    finally:
+            sock.close()
+
 
 def main():
    host = "scanme.nmap.org"
@@ -52,11 +74,11 @@ def main():
       for future in futures:
           porta, status = future.result()
           if status == "OPEN":
-             banner = grab_banner(host, porta)
-             if banner:
-              print(f"[+] Porta {porta} OPEN | {banner} ")
+             if porta == 80:
+                http_info = http_enum(host, porta)
+                print(f"[+] Porta {porta} OPEN | {http_info} ")
              else:  
-               print(f"[+] Porta {porta} OPEN | Banner não identificado")
+               print(f"[+] Porta {porta} OPEN | {grab_banner}")
 
 if __name__ == "__main__":
    main()

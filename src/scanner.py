@@ -12,29 +12,31 @@ def scan_port(host, porta, timeout=1):
        result = sock.connect_ex((host, porta))
 
        if result == 0:
-          return porta, "OPEN"
+          banner = grab_banner(host, porta)
+          return porta, "OPEN" , banner
        else:
-        return porta, "CLOSED"
+        return porta, "CLOSED", None
     
     except socket.timeout:
-         return porta, "FILTERED"
+         return porta, "FILTERED", None
 
     except Exception as e:
-            return porta, f"ERROR: ({e})"
+            return porta, "ERROR", str(e)
 
     finally:
          sock.close()
 
 def grab_banner(host,porta):
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock = socket.socket()
         sock.settimeout(2)
         sock.connect((host,porta))
-        banner = sock.recv(1024)
-        sock.close()
-        return banner.decode(errors="ignore").strip()
+        banner = sock.recv(1024).decode(errors="ignore").strip()
+        return banner if banner else "Banner não identificado"
     except:
-         return None
+         return "Banner não identificado"
+    finally:
+         sock.close()
 
 def http_enum(host, porta):
     try:
@@ -58,6 +60,10 @@ def http_enum(host, porta):
     finally:
             sock.close()
 
+def save_result(text):
+    with open("scan_results.txt", "a") as f:
+        f.write(text + "\n")
+
 
 def main():
    host = "scanme.nmap.org"
@@ -72,13 +78,17 @@ def main():
           futures.append(executor.submit(scan_port, host, port))
 
       for future in futures:
-          porta, status = future.result()
+          porta, status, banner = future.result()
+         
           if status == "OPEN":
              if porta == 80:
                 http_info = http_enum(host, porta)
-                print(f"[+] Porta {porta} OPEN | {http_info} ")
+                result = f"[+] Porta {porta} OPEN | {http_info}" 
              else:  
-               print(f"[+] Porta {porta} OPEN | {grab_banner}")
+               result = f"[+] Porta {porta} OPEN | {banner}"
+
+             print(result)
+             save_result(result)   
 
 if __name__ == "__main__":
    main()

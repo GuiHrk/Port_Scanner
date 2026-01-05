@@ -1,0 +1,2 @@
+[+] Porta 22 OPEN | SSH-2.0-OpenSSH_6.6.1p1 Ubuntu-2ubuntu2.13
+[+] Porta 80 OPEN | Server: Apache/2.4.7 (Ubuntu)
